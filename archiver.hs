@@ -7,25 +7,26 @@ import Network.HTTP (getRequest, rspBody, simpleHTTP, RequestMethod(POST))
 import Network.URI (isURI, parseURI, uriPath)
 import System.Environment
 
-import Network.Gitit.Interface (askUser, liftIO, processWithM, uEmail, Plugin(PreCommitTransform), Inline(Link))
-import Text.Pandoc (defaultParserState, readMarkdown)
-
-plugin :: Plugin
-plugin = PreCommitTransform archivePage
-
--- archivePage :: (MonadIO m) => String -> ReaderT (Config, Maybe User) (StateT IO) String
-archivePage x = do mbUser <- askUser
-                   let email = case mbUser of
-                        Nothing -> "nobody@mailinator.com"
-                        Just u  -> uEmail u
-                   let p = readMarkdown defaultParserState x
-                   -- force evaluation and archiving side-effects
-                   _p' <- liftIO $ processWithM (archiveLinks email) p
-                   return x -- note: this is read-only - don't actually change page!
-
-archiveLinks :: String -> Inline -> IO Inline
-archiveLinks e x@(Link _ (uln, _)) = forkIO (checkArchive e uln) >> return x
-archiveLinks _ x                   = return x
+main :: IO ()
+main = do args <- getArgs
+          case args of
+           (f:[]) -> archivePage Nothing f
+           (f:e:[]) -> archivePage (Just e) f
+           _ -> error "must supply a filename or a filename and an email adress"
+          
+archivePage :: Maybe String -> FilePath -> IO ()
+archivePage user file = loop
+                    where
+                        email = fromMaybe "nobody@mailinator.com" user
+                        loop = do contents <- B.readFile file
+                                  let (url,rest) = B.break (=='\n') contents
+                                  checkArchive email (B.unpack url)
+                                  print url
+                                  -- banned >=100 requests/hour; choke to ~1/minute
+                                  threadDelay 40000000 -- ~40 seconds
+                                  if B.length rest /= 0 then do B.writeFile file (B.drop 1 rest) -- drop to get rid of leading \n
+                                                                loop
+                                   else return ()
 
 -- | Error check the URL and then archive it both ways
 checkArchive :: String -> String -> IO ()
