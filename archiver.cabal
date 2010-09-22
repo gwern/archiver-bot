@@ -1,0 +1,31 @@
+name:                archiver
+version:             0.0
+
+license:             BSD3
+license-file:        LICENSE
+author:              Gwern
+maintainer:          Gwern <gwern0@gmail.com>
+
+category:            Documentation, Network
+synopsis:            Archive supplied URLs in WebCite \& Internet Archive
+description:         archiver is a daemon which will watch a specified text file,
+                     each line of which is a URL, and will one by one request that
+                     the URLs be archived or spidered by <www.webcitation.org> and
+                     <www.archive.org> for future reference.
+                     .
+                     Because the interface is a simple text file, this can be combined
+                     with other scripts; for example, a script using Sqlite to extract
+                     visited URLs from Firefox, or a program extracting URLs from Pandoc
+                     documents.
+
+build-type:          Simple
+Cabal-Version:       >= 1.2
+
+-- Library
+--         exposed-modules:     Network.URL.Archive
+--         build-Depends:       base>=4, network, curl, hinotify
+--         ghc-options:         -Wall
+
+Executable archiver
+           main-is:       archiver.hs
+           build-depends: base>=4 && < 5, HTTP, network, bytestring, curl, hinotify
