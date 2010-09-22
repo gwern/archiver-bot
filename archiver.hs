@@ -1,5 +1,5 @@
 import Control.Concurrent (threadDelay)
-import Control.Monad (when)
+import Control.Monad (forever, when)
 import qualified Data.ByteString.Char8 as B
 import Data.Maybe (fromJust, fromMaybe)
 import Network.Browser (browse, formToRequest, request, Form(..))
@@ -18,8 +18,9 @@ main = do args <- getArgs
 
 watch :: Maybe String -> FilePath -> IO ()
 watch user file = do i <- initINotify
+                     archivePage user file -- empty out existing file, then we add a watch & sleep
                      _ <- addWatch i [AllEvents] file (\_ -> archivePage user file)
-                     return ()
+                     forever $ threadDelay maxBound -- sleep... forever
 
 archivePage :: Maybe String -> FilePath -> IO ()
 archivePage user file = do contents <- B.readFile file
