@@ -14,7 +14,7 @@ main = do args <- getArgs
           case args of
            (f:[]) ->   watch Nothing f
            (f:e:[]) -> watch (Just e) f
-           _ -> error "must supply a filename or a filename and an email adress"
+           _ -> error "must supply a filename or a filename and an email address"
 
 watch :: Maybe String -> FilePath -> IO ()
 watch user file = do i <- initINotify
