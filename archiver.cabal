@@ -19,7 +19,13 @@ description:         archiver is a daemon which will watch a specified text file
                      documents.
 
 build-type:          Simple
-Cabal-Version:       >= 1.2
+Cabal-Version:       >= 1.6
+stability:           provisional
+tested-with:         GHC==6.12.1
+
+source-repository head
+  type:     darcs
+  location: http://community.haskell.org/~gwern/archiver/
 
 Library
         exposed-modules:     Network.URL.Archiver
