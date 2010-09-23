@@ -7,11 +7,11 @@ author:              Gwern
 maintainer:          Gwern <gwern0@gmail.com>
 
 category:            Documentation, Network
-synopsis:            Archive supplied URLs in WebCite \& Internet Archive
+synopsis:            Archive supplied URLs in WebCite & Internet Archive
 description:         archiver is a daemon which will watch a specified text file,
                      each line of which is a URL, and will one by one request that
-                     the URLs be archived or spidered by <www.webcitation.org> and
-                     <www.archive.org> for future reference.
+                     the URLs be archived or spidered by <http://www.webcitation.org> and
+                     <http://www.archive.org> for future reference.
                      .
                      Because the interface is a simple text file, this can be combined
                      with other scripts; for example, a script using Sqlite to extract
