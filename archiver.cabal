@@ -21,11 +21,11 @@ description:         archiver is a daemon which will watch a specified text file
 build-type:          Simple
 Cabal-Version:       >= 1.2
 
--- Library
---         exposed-modules:     Network.URL.Archive
---         build-Depends:       base>=4, network, curl, hinotify
---         ghc-options:         -Wall
+Library
+        exposed-modules:     Network.URL.Archiver
+        build-Depends:       base>=4 && < 5, network, HTTP, curl, hinotify
+        ghc-options:         -Wall
 
 Executable archiver
            main-is:       archiver.hs
-           build-depends: base>=4 && < 5, HTTP, network, bytestring, curl, hinotify
+           build-depends: base>=4 && < 5, bytestring, hinotify
