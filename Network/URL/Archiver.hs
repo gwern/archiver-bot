@@ -25,10 +25,11 @@ webciteArchive email url = openURL ("http://www.webcitation.org/archive?url=" ++
    where openURL = simpleHTTP . getRequest
 
 -- |  Request <http://www.alexa.com> to spider a supplied URL. Alexa supplies the Internet Archive's caches.
+-- TODO: currently broken? Alexa changed pages? is down?
 alexaArchive :: String -> IO ()
 alexaArchive url = do let archiveform = Form POST
                              (fromJust $ parseURI "http://www.alexa.com/help/crawlrequest")
                                  [("url", url), ("submit", "")]
                       (uri, resp) <- browse $ request $ formToRequest archiveform
                       when (uriPath uri /= "/help/crawlthanks") $
-                           error $ "Request failed! Alexa changed webpages? Response:" ++ rspBody resp
+                           print $ "Request failed! Alexa changed webpages? Response:" ++ rspBody resp
