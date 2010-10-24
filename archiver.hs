@@ -3,6 +3,7 @@ import Control.Monad (forever, liftM, when)
 import Data.List (nub, sort)
 import Data.Maybe (fromMaybe)
 import System.Environment (getArgs)
+import qualified Data.ByteString.Char8 as B (break, concat, length, readFile, split, unpack, writeFile, ByteString)
 
 import System.INotify (addWatch, initINotify, EventVariety(AllEvents))
 
@@ -28,7 +29,12 @@ archivePage user file = do contents <- B.readFile file
                            print url
                            -- banned >=100 requests/hour; choke to ~1/minute
                            threadDelay 40000000 -- ~40 seconds
-                           when (B.length rest /= 0) (B.writeFile file (B.drop 1 rest) >> archivePage user file) -- drop to get rid of leading \n
-                           return ()
-                           where
-                               email = fromMaybe "nobody@mailinator.com" user
+                           when (B.length rest /= 0) (writePages file url >> archivePage user file) -- drop to get rid of leading \n
+                               where email = fromMaybe "nobody@mailinator.com" user
+
+-- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
+writePages :: FilePath -> B.ByteString -> IO ()
+writePages file done = do original <- liftM (B.split '\n') $ B.readFile file
+                          let new = nub $ sort original
+                          let final = B.concat $ filter (== done) new
+                          B.writeFile file final
