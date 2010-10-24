@@ -1,6 +1,6 @@
 import Control.Concurrent (threadDelay)
-import Control.Monad (forever, when)
-import qualified Data.ByteString.Char8 as B (break, drop, length, readFile, unpack, writeFile)
+import Control.Monad (forever, liftM, when)
+import Data.List (nub, sort)
 import Data.Maybe (fromMaybe)
 import System.Environment (getArgs)
 
