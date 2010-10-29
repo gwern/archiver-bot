@@ -4,7 +4,7 @@ import Data.List (nub, sort)
 import Data.Maybe (fromMaybe)
 import Network.HTTP (getRequest, simpleHTTP)
 import System.Environment (getArgs)
-import qualified Data.ByteString.Char8 as B (break, concat, length, readFile, split, unpack, writeFile, ByteString)
+import qualified Data.ByteString.Char8 as B (break, intercalate, length, readFile, singleton, split, unpack, writeFile, ByteString)
 
 import System.INotify (addWatch, initINotify, EventVariety(AllEvents))
 
@@ -42,5 +42,5 @@ archivePage usr file = do connectedp <- simpleHTTP (getRequest "http://www.googl
 writePages :: FilePath -> B.ByteString -> IO ()
 writePages file done = do original <- liftM (B.split '\n') $ B.readFile file
                           let new = nub $ sort original
-                          let final = B.concat $ filter (== done) new
+                          let final = B.intercalate (B.singleton '\n') $ filter (not . (== done)) new
                           B.writeFile file final
