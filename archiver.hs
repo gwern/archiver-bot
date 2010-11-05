@@ -1,4 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 import Control.Concurrent (threadDelay)
+import qualified Control.Exception as CE (catch, IOException)
 import Control.Monad (forever, liftM, when)
 import Data.List (nub, sort)
 import Data.Maybe (fromMaybe)
@@ -24,7 +26,7 @@ watch usr file = do i <- initINotify
                     forever $ threadDelay maxBound -- sleep... forever. inotify will wake us up
 
 archivePage :: Maybe String -> FilePath -> IO ()
-archivePage usr file = do connectedp <- simpleHTTP (getRequest "http://www.google.com/")
+archivePage usr file = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.google.com/")) (\(_::CE.IOException) -> return (Left undefined))
                           case connectedp of
                              Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
                                         threadDelay 90000000 >> archivePage usr file
