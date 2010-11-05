@@ -34,7 +34,7 @@ archivePage usr file = do connectedp <- simpleHTTP (getRequest "http://www.googl
                                           checkArchive email (B.unpack url)
                                           print url
                                           -- banned >=100 requests/hour; choke to ~1/minute
-                                          threadDelay 40000000 -- ~40 seconds
+                                          threadDelay 30000000 -- ~30 seconds
                                           when (B.length rest /= 0) (writePages file url >> archivePage usr file) -- drop to get rid of leading \n
                                               where email = fromMaybe "nobody@mailinator.com" usr
 

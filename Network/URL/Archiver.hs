@@ -18,7 +18,7 @@ checkArchive email url = when (isURI url) (webciteArchive email url >> alexaArch
    in the future), so it is suggested that one test with a valid email address.
  
    /Warning!/ WebCite has throttling mechanisms; if you request more than 100 URLs per hour, your IP may be banned! It is
-   suggested that one sleep for \~40 seconds between each URL request. -}
+   suggested that one sleep for \~30 seconds between each URL request. -}
 webciteArchive :: String -> String -> IO ()
 webciteArchive email url = openURL ("http://www.webcitation.org/archive?url=" ++ url ++ "&email=" ++ email)
                            >> return ()
