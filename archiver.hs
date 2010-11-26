@@ -1,29 +1,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 import Control.Concurrent (threadDelay)
 import qualified Control.Exception as CE (catch, IOException)
-import Control.Monad (forever, liftM, when)
+import Control.Monad (liftM, when)
 import Data.List (nub, sort)
 import Data.Maybe (fromMaybe)
 import Network.HTTP (getRequest, simpleHTTP)
 import System.Environment (getArgs)
 import qualified Data.ByteString.Char8 as B (break, intercalate, length, readFile, singleton, split, unpack, writeFile, ByteString)
 
-import System.INotify (addWatch, initINotify, EventVariety(AllEvents))
-
 import Network.URL.Archiver (checkArchive)
 
 main :: IO ()
 main = do args <- getArgs
           case args of
-           (f:[]) ->   watch Nothing f
-           (f:e:[]) -> watch (Just e) f
+           (f:[]) ->   archivePage Nothing f
+           (f:e:[]) -> archivePage (Just e) f
            _ -> error "must supply a filename or a filename and an email address"
-
-watch :: Maybe String -> FilePath -> IO ()
-watch usr file = do i <- initINotify
-                    archivePage usr file -- empty out existing file, then we add a watch & sleep
-                    _ <- addWatch i [AllEvents] file (\_ -> archivePage usr file)
-                    forever $ threadDelay maxBound -- sleep... forever. inotify will wake us up
 
 archivePage :: Maybe String -> FilePath -> IO ()
 archivePage usr file = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
