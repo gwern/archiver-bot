@@ -35,8 +35,8 @@ archivePage usr file = do connectedp <- CE.catch (simpleHTTP (getRequest "http:/
                                           let (url,rest) = B.break (=='\n') contents
                                           checkArchive email (B.unpack url)
                                           print url
-                                          -- banned >=100 requests/hour; choke to ~1/minute
-                                          threadDelay 30000000 -- ~30 seconds
+                                          -- banned >=100 requests/hour; choke it
+                                          threadDelay 20000000 -- ~20 seconds
                                           when (B.length rest /= 0) (writePages file url >> archivePage usr file) -- drop to get rid of leading \n
                                               where email = fromMaybe "nobody@mailinator.com" usr
 
