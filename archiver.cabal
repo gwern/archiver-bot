@@ -1,5 +1,5 @@
 name:                archiver
-version:             0.2
+version:             0.3
 
 license:             BSD3
 license-file:        LICENSE
@@ -9,7 +9,7 @@ maintainer:          Gwern <gwern0@gmail.com>
 category:            Documentation, Network
 synopsis:            Archive supplied URLs in WebCite & Internet Archive
 description:         archiver is a daemon which will process a specified text file,
-                     each line of which is a URL, and will one by one request that
+                     each line of which is a URL, and will (randomly) one by one request that
                      the URLs be archived or spidered by <http://www.webcitation.org> and
                      <http://www.archive.org> for future reference.
                      .
@@ -34,4 +34,4 @@ Library
 
 Executable archiver
            main-is:       archiver.hs
-           build-depends: base>=4 && < 5, bytestring
+           build-depends: base>=4 && < 5, bytestring, random
