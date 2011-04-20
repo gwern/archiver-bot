@@ -5,6 +5,7 @@ import Control.Monad (liftM, when)
 import Data.List (delete, nub, sort)
 import Data.Maybe (fromMaybe)
 import Network.HTTP (getRequest, simpleHTTP)
+import Network.URI (isURI)
 import System.Environment (getArgs)
 import qualified Data.ByteString.Char8 as B (count, intercalate, readFile, singleton, split, unpack, writeFile, ByteString)
 import System.Random
@@ -26,10 +27,11 @@ archivePage usr file = do connectedp <- CE.catch (simpleHTTP (getRequest "http:/
                              Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
                                           contents <- B.readFile file
                                           (url,rest) <- splitRandom contents
-                                          checkArchive email (B.unpack url)
-                                          print url
-                                          -- banned >=100 requests/hour; choke it
-                                          threadDelay 26000000 -- ~26 seconds
+                                          let url' = B.unpack url
+                                          when (isURI url') $ do checkArchive email url'
+                                                                 print url'
+                                                                 -- banned >=100 requests/hour; choke it
+                                                                 threadDelay 26000000 -- ~26 seconds
                                           when (length rest /= 0) (writePages file url >> archivePage usr file) -- drop to get rid of leading \n
                                               where email = fromMaybe "nobody@mailinator.com" usr
 
