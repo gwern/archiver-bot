@@ -16,10 +16,10 @@ description:         archiver is a daemon which will process a specified text fi
                      Because the interface is a simple text file, this can be combined
                      with other scripts; for example, a script using Sqlite to extract
                      visited URLs from Firefox, or a program extracting URLs from Pandoc
-                     documents. (See <http://www.gwern.net/Archiving%20URLs.html>.)
+                     documents. (See <http://www.gwern.net/Archiving%20URLs>.)
                      .
                      For explanation of the derivation of the code in `Network.URL.Archiver`,
-                     see <http://www.gwern.net/haskell/Wikipedia%20Archive%20Bot.html>.
+                     see <http://www.gwern.net/haskell/Wikipedia%20Archive%20Bot>.
 
 build-type:          Simple
 Cabal-Version:       >= 1.6
