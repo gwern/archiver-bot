@@ -1,13 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 import Control.Concurrent (threadDelay)
 import qualified Control.Exception as CE (catch, IOException)
-import Control.Monad (liftM, when)
+import Control.Monad (liftM, unless, when)
 import Data.List (delete)
 import qualified Data.Set as S (fromList, toList)
 import Data.Maybe (fromMaybe)
 import Network.HTTP (getRequest, simpleHTTP)
 import Network.URI (isURI)
 import System.Environment (getArgs)
+import System.Process (runCommand)
 import qualified Data.ByteString.Char8 as B (count, intercalate, readFile, singleton, split, unpack, writeFile, ByteString)
 import System.Random
 
@@ -16,25 +17,28 @@ import Network.URL.Archiver (checkArchive)
 main :: IO ()
 main = do args <- getArgs
           case args of
-           (f:[]) ->   archivePage Nothing f
-           (f:e:[]) -> archivePage (Just e) f
+           (f:[]) ->   archivePage f Nothing Nothing
+           (f:e:[]) -> archivePage f (Just e) Nothing
+           (f:e:s:[]) -> archivePage f (Just e) (Just s)
            _ -> error "must supply a filename or a filename and an email address"
 
-archivePage :: Maybe String -> FilePath -> IO ()
-archivePage usr file = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
-                          case connectedp of
-                             Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
-                                        threadDelay 90000000 >> archivePage usr file
-                             Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
-                                          contents <- B.readFile file
-                                          (url,rest) <- splitRandom contents
-                                          let url' = B.unpack url
-                                          when (isURI url') $ do checkArchive email url'
-                                                                 print url'
-                                                                 -- banned >=100 requests/hour; choke it
-                                                                 threadDelay 26000000 -- ~26 seconds
-                                          when (length rest /= 0) (writePages file url >> archivePage usr file) -- drop to get rid of leading \n
-                                              where email = fromMaybe "nobody@mailinator.com" usr
+archivePage :: FilePath -> Maybe String -> Maybe String -> IO ()
+archivePage file email sh = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
+                               case connectedp of
+                                 Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
+                                   threadDelay 90000000 >> archivePage file email sh
+                                 Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
+                                   contents <- B.readFile file
+                                   (url,rest) <- splitRandom contents
+                                   let url' = B.unpack url
+                                   let email' =  fromMaybe "nobody@mailinator.com" email
+                                   when (isURI url') $ do checkArchive email' url'
+                                                          print url'
+                                                          -- banned >=100 requests/hour; choke it
+                                                          threadDelay 26000000 -- ~26 seconds
+
+                                   maybe (return ()) (\x -> runCommand (x ++ " " ++ url') >> return ()) sh
+                                   unless (null rest) (writePages file url >> archivePage file email sh) -- rid of leading \n
 
 -- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
 writePages :: FilePath -> B.ByteString -> IO ()
