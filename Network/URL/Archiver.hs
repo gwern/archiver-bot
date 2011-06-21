@@ -1,17 +1,24 @@
-module Network.URL.Archiver where
+module Network.URL.Archiver (checkArchive) where
 
-import Data.List (isPrefixOf)
 import Control.Monad (when)
+import Data.Char (isAlphaNum, isAscii)
+import Data.List (isPrefixOf)
 import Data.Maybe (fromJust)
 import Network.Browser (browse, formToRequest, request, Form(..))
 import Network.HTTP (getRequest, rspBody, simpleHTTP, RequestMethod(POST))
 import Network.URI (isURI, parseURI, uriPath)
+import System.Random (getStdGen, randomR)
+import Text.Printf (printf)
 
--- | Error check the URL and then archive it using 'webciteArchive' and 'alexaArchive'
+-- | Open a URL, and return either the HTML source or an error.
+-- openURL :: String -> IO (Result (Response String))
+openURL = simpleHTTP . getRequest
+
+-- | Error check the URL and then archive it using 'webciteArchive', 'alexaArchive', and 'alexaToolbar'
 checkArchive :: String -- ^ email for WebCite to send status to
                 -> String -- ^ URL to archive
                 -> IO ()
-checkArchive email url = when (isURI url) (webciteArchive email url >> alexaArchive url)
+checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> alexaArchive url)
 
 {- | Request <http://www.webcitation.org> to copy a supplied URL; WebCite does on-demand archiving, unlike Alexa/Internet Archive,
    and so in practice this is the most useful function. This function throws away any return status from WebCite (which may be changed
@@ -23,11 +30,9 @@ checkArchive email url = when (isURI url) (webciteArchive email url >> alexaArch
 webciteArchive :: String -> String -> IO ()
 webciteArchive email url = when (not $ "http://www.webcitation.org" `isPrefixOf` url) $
                             void $ openURL ("http://www.webcitation.org/archive?url=" ++ url ++ "&email=" ++ email)
-   where openURL = simpleHTTP . getRequest
-         void = (>> return ()) -- TODO replace with Control.Monad.void in GHC7
+   where void = (>> return ()) -- TODO replace with Control.Monad.void in GHC7
 
--- |  Request <http://www.alexa.com> to spider a supplied URL. Alexa supplies the Internet Archive's caches.
--- TODO: currently broken? Alexa changed pages? is down?
+-- | Request <http://www.alexa.com> to spider a supplied URL. Alexa supplies the Internet Archive's caches.
 alexaArchive :: String -> IO ()
 alexaArchive url = when (not $ "http://www.archive.org" `isPrefixOf` url) $
                      do let archiveform = Form POST
@@ -36,3 +41,16 @@ alexaArchive url = when (not $ "http://www.archive.org" `isPrefixOf` url) $
                         (uri, resp) <- browse $ request $ formToRequest archiveform
                         when (uriPath uri /= "/help/crawlthanks") $
                            print $ "Request failed! Alexa changed webpages? Response:" ++ rspBody resp
+
+-- | Ping Alexa's servers like the Toolbar does; this may or may not result in any archiving.
+alexaToolbar :: String -> IO ()
+alexaToolbar url = do gen <- getStdGen
+                      let rint = fst $ randomR (1000::Int,20000) gen
+                      let payload = "rq=0&wid=" ++ show rint ++ "&ref=&url=" ++ escape url
+                      _ <- openURL $ "http://data.alexa.com/data/SbADd155Tq0000?cli=10&ver=spkyf-1.5.0&dat=ns&cdt=" ++ payload
+                      return ()
+             where escape :: String -> String
+                   escape = concatMap escapeURIChar
+                   escapeURIChar :: Char -> String
+                   escapeURIChar c | isAscii c && isAlphaNum c = [c]
+                                   | otherwise                = concatMap (printf "%%%02X") [c]
