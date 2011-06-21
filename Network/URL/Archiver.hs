@@ -46,8 +46,8 @@ alexaArchive url = when (not $ "http://www.archive.org" `isPrefixOf` url) $
 alexaToolbar :: String -> IO ()
 alexaToolbar url = do gen <- getStdGen
                       let rint = fst $ randomR (1000::Int,20000) gen
-                      let payload = "rq=0&wid=" ++ show rint ++ "&ref=&url=" ++ escape url
-                      _ <- openURL $ "http://data.alexa.com/data/SbADd155Tq0000?cli=10&ver=spkyf-1.5.0&dat=ns&cdt=" ++ payload
+                      let payload = "wid=" ++ show rint ++ "&ref=&url=" ++ escape url
+                      _ <- openURL $ "http://data.alexa.com/data/SbADd155Tq0000?cli=10&ver=spkyf-1.5.0&dat=ns&cdt=rq=0&" ++ payload
                       return ()
              where escape :: String -> String
                    escape = concatMap escapeURIChar
