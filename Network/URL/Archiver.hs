@@ -18,7 +18,7 @@ openURL = simpleHTTP . getRequest
 checkArchive :: String -- ^ email for WebCite to send status to
                 -> String -- ^ URL to archive
                 -> IO ()
-checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> alexaArchive url)
+checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> alexaArchive url >> internetArchiveLive url)
 
 {- | Request <http://www.webcitation.org> to copy a supplied URL; WebCite does on-demand archiving, unlike Alexa/Internet Archive,
    and so in practice this is the most useful function. This function throws away any return status from WebCite (which may be changed
@@ -31,6 +31,12 @@ webciteArchive :: String -> String -> IO ()
 webciteArchive email url = when (not $ "http://www.webcitation.org" `isPrefixOf` url) $
                             void $ openURL ("http://www.webcitation.org/archive?url=" ++ url ++ "&email=" ++ email)
    where void = (>> return ()) -- TODO replace with Control.Monad.void in GHC7
+
+-- | Request a URL through Internet Archive's live Internet mirror; this is completely speculative and may result in no archiving.
+--   This method is a guess based on my use of their mirror and a banner that is sometimes inserted;
+--   see <http://www.archive.org/post/380853/virus-operating-in-internet-archive>
+internetArchiveLive :: String -> IO ()
+internetArchiveLive url = openURL ("http://liveweb.archive.org/"++url) >> return ()
 
 -- | Request <http://www.alexa.com> to spider a supplied URL. Alexa supplies the Internet Archive's caches.
 alexaArchive :: String -> IO ()
