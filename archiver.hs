@@ -34,10 +34,9 @@ archivePage file email sh = do connectedp <- CE.catch (simpleHTTP (getRequest "h
                                    let email' =  fromMaybe "nobody@mailinator.com" email
                                    when (isURI url') $ do checkArchive email' url'
                                                           print url'
+                                                          maybe (return ()) (\x -> runCommand (x ++ " " ++ url') >> return ()) sh
                                                           -- banned >=100 requests/hour; choke it
                                                           threadDelay 26000000 -- ~26 seconds
-
-                                   maybe (return ()) (\x -> runCommand (x ++ " " ++ url') >> return ()) sh
                                    unless (null rest) (writePages file url >> archivePage file email sh) -- rid of leading \n
 
 -- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
