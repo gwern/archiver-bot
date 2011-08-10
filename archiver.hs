@@ -9,7 +9,7 @@ import Network.HTTP (getRequest, simpleHTTP)
 import Network.URI (isURI)
 import System.Environment (getArgs)
 import System.Process (runCommand)
-import qualified Data.ByteString.Char8 as B (count, intercalate, readFile, singleton, split, unpack, writeFile, ByteString)
+import qualified Data.ByteString.Char8 as B (count, intercalate, length, readFile, singleton, split, unpack, writeFile, ByteString)
 import System.Random
 
 import Network.URL.Archiver (checkArchive)
@@ -29,6 +29,7 @@ archivePage file email sh = do connectedp <- CE.catch (simpleHTTP (getRequest "h
                                    threadDelay 90000000 >> archivePage file email sh
                                  Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
                                    contents <- B.readFile file
+                                   when (B.length contents == 0) $ threadDelay 90000000
                                    (url,rest) <- splitRandom contents
                                    let url' = B.unpack url
                                    let email' =  fromMaybe "nobody@mailinator.com" email
@@ -51,6 +52,6 @@ splitRandom :: B.ByteString -> IO (B.ByteString, [B.ByteString])
 splitRandom s = do let ss = B.split '\n' s
                    let l  = B.count '\n' s
                    i <- getStdRandom (randomR (0,l))
-                   let randpick = ss !! i
+                   let randpick = if length ss > 1 then ss !! i else ss !! 0
                    let removed = Data.List.delete randpick ss
                    return (randpick, removed)
