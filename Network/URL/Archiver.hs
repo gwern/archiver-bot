@@ -18,7 +18,7 @@ openURL = simpleHTTP . getRequest
 checkArchive :: String -- ^ email for WebCite to send status to
                 -> String -- ^ URL to archive
                 -> IO ()
-checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> alexaArchive url >> internetArchiveLive url >> wikiwixArchive url)
+checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> alexaArchive url >> internetArchiveLive url >> wikiwixArchive url >> googleSearch url)
 
 {- | Request <http://www.webcitation.org> to copy a supplied URL; WebCite does on-demand archiving, unlike Alexa/Internet Archive,
    and so in practice this is the most useful function. This function throws away any return status from WebCite (which may be changed
@@ -55,11 +55,17 @@ alexaToolbar url = do gen <- getStdGen
                       let payload = "wid=" ++ show rint ++ "&ref=&url=" ++ escape url
                       _ <- openURL $ "http://data.alexa.com/data/SbADd155Tq0000?cli=10&ver=spkyf-1.5.0&dat=ns&cdt=rq=0&" ++ payload
                       return ()
-             where escape :: String -> String
-                   escape = concatMap escapeURIChar
-                   escapeURIChar :: Char -> String
-                   escapeURIChar c | isAscii c && isAlphaNum c = [c]
-                                   | otherwise                = concatMap (printf "%%%02X") [c]
 
 wikiwixArchive :: String -> IO ()
 wikiwixArchive url = openURL ("http://archive.wikiwix.com/cache/?url="++url) >> return ()
+
+-- can't hurt to let Google know it exists
+googleSearch :: String -> IO ()
+googleSearch url = openURL ("http://www.google.com/search?q=" ++ escape url) >> return ()
+
+-- | Utility function to URL-encode a string for use in URL arguments; copied from somewhere
+escape :: String -> String
+escape = concatMap escapeURIChar
+escapeURIChar :: Char -> String
+escapeURIChar c | isAscii c && isAlphaNum c = [c]
+                | otherwise                = concatMap (printf "%%%02X") [c]
