@@ -1,14 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 import Control.Concurrent (threadDelay)
 import qualified Control.Exception as CE (catch, IOException)
-import Control.Monad (liftM, unless, when)
+import Control.Monad (liftM, unless, void, when)
 import Data.List (delete)
 import qualified Data.Set as S (fromList, toList)
 import Data.Maybe (fromMaybe)
 import Network.HTTP (getRequest, simpleHTTP)
 import Network.URI (isURI)
 import System.Environment (getArgs)
-import System.Process (runCommand)
+import System.Process (runCommand, terminateProcess)
 import qualified Data.ByteString.Char8 as B (count, intercalate, length, readFile, singleton, split, unpack, writeFile, ByteString)
 import System.Random
 
@@ -35,9 +35,14 @@ archivePage file email sh = do connectedp <- CE.catch (simpleHTTP (getRequest "h
                                    let email' =  fromMaybe "nobody@mailinator.com" email
                                    when (isURI url') $ do checkArchive email' url'
                                                           print url'
-                                                          maybe (return ()) (\x -> runCommand (x ++ " " ++ url') >> return ()) sh
+                                                          hdl <- case sh of
+                                                                      Nothing -> return Nothing
+                                                                      Just sh' -> return $ Just (runCommand (sh' ++ " " ++ url'))
                                                           -- banned >=100 requests/hour; choke it
-                                                          threadDelay 26000000 -- ~26 seconds
+                                                          threadDelay 28000000 -- 28 seconds
+                                                          case hdl of
+                                                            Nothing -> return ()
+                                                            Just hdl' -> void $ liftM terminateProcess hdl'
                                    unless (null rest) (writePages file url >> archivePage file email sh) -- rid of leading \n
 
 -- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
@@ -52,6 +57,6 @@ splitRandom :: B.ByteString -> IO (B.ByteString, [B.ByteString])
 splitRandom s = do let ss = B.split '\n' s
                    let l  = B.count '\n' s
                    i <- getStdRandom (randomR (0,l))
-                   let randpick = if length ss > 1 then ss !! i else ss !! 0
+                   let randpick = if length ss > 1 then ss !! i else head ss
                    let removed = Data.List.delete randpick ss
                    return (randpick, removed)
