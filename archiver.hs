@@ -17,33 +17,35 @@ import Network.URL.Archiver (checkArchive)
 main :: IO ()
 main = do args <- getArgs
           case args of
-           (f:[]) ->   archivePage f Nothing Nothing
-           (f:e:[]) -> archivePage f (Just e) Nothing
-           (f:e:s:[]) -> archivePage f (Just e) (Just s)
+           (f:[])       -> archivePage f Nothing  Nothing  Nothing
+           (f:e:[])     -> archivePage f (Just e) Nothing  Nothing
+           (f:e:s:[])   -> archivePage f (Just e) (Just s) Nothing
+           (f:e:s:n:[]) -> archivePage f (Just e) (Just s) (Just (read n :: Int))
            _ -> error "must supply a filename or a filename and an email address"
 
-archivePage :: FilePath -> Maybe String -> Maybe String -> IO ()
-archivePage file email sh = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
-                               case connectedp of
-                                 Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
-                                   threadDelay 90000000 >> archivePage file email sh
-                                 Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
-                                   contents <- B.readFile file
-                                   when (B.length contents == 0) $ threadDelay 90000000
-                                   (url,rest) <- splitRandom contents
-                                   let url' = B.unpack url
-                                   let email' =  fromMaybe "nobody@mailinator.com" email
-                                   when (isURI url') $ do checkArchive email' url'
-                                                          print url'
-                                                          hdl <- case sh of
-                                                                      Nothing -> return Nothing
-                                                                      Just sh' -> return $ Just (runCommand (sh' ++ " " ++ url'))
-                                                          -- banned >=100 requests/hour; choke it
-                                                          threadDelay 28000000 -- 28 seconds
-                                                          case hdl of
-                                                            Nothing -> return ()
-                                                            Just hdl' -> void $ liftM terminateProcess hdl'
-                                   unless (null rest) (writePages file url >> archivePage file email sh) -- rid of leading \n
+archivePage :: FilePath -> Maybe String -> Maybe String -> Maybe Int -> IO ()
+archivePage file email sh n = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
+                                 case connectedp of
+                                   Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
+                                     threadDelay 90000000 >> archivePage file email sh n
+                                   Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
+                                     contents <- B.readFile file
+                                     when (B.length contents == 0) $ threadDelay 90000000
+                                     (url,rest) <- splitRandom contents
+                                     let url' = B.unpack url
+                                     let email' =  fromMaybe "nobody@mailinator.com" email
+                                     when (isURI url') $ do checkArchive email' url'
+                                                            print url'
+                                                            hdl <- case sh of
+                                                                        Nothing -> return Nothing
+                                                                        Just sh' -> return $ Just (runCommand (sh' ++ " " ++ url'))
+                                                            -- banned >=100 requests/hour; choke it
+                                                            -- default: 48 seconds
+                                                            threadDelay $ 1000000 * fromMaybe 48 n
+                                                            case hdl of
+                                                              Nothing -> return ()
+                                                              Just hdl' -> void $ liftM terminateProcess hdl'
+                                     unless (null rest) (writePages file url >> archivePage file email sh n) -- rid of leading \n
 
 -- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
 writePages :: FilePath -> B.ByteString -> IO ()
