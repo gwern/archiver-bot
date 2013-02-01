@@ -9,8 +9,8 @@ import Network.HTTP (getRequest, simpleHTTP)
 import Network.URI (isURI)
 import System.Environment (getArgs)
 import System.Process (runCommand, terminateProcess)
-import qualified Data.ByteString.Char8 as B (count, intercalate, length, readFile, singleton, split, unpack, writeFile, ByteString)
-import System.Random
+import qualified Data.ByteString.Char8 as B (length, lines, readFile, unlines, unpack, writeFile, ByteString)
+import System.Random (getStdRandom, randomR)
 
 import Network.URL.Archiver (checkArchive)
 
@@ -21,16 +21,19 @@ main = do args <- getArgs
            (f:e:[])     -> archivePage f (Just e) Nothing  Nothing
            (f:e:s:[])   -> archivePage f (Just e) (Just s) Nothing
            (f:e:s:n:[]) -> archivePage f (Just e) (Just s) (Just (read n :: Int))
-           _ -> error "must supply a filename or a filename and an email address"
+           _ -> error "must supply a filename, or a filename and an email address"
 
 archivePage :: FilePath -> Maybe String -> Maybe String -> Maybe Int -> IO ()
-archivePage file email sh n = do connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
+archivePage file email sh n = do -- default: 48 seconds (converted to milliseconds)
+                                 let n' = 1000000 * fromMaybe 48 n
+                                 let loop = archivePage file email sh n
+                                 connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
                                  case connectedp of
                                    Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
-                                     threadDelay 90000000 >> archivePage file email sh n
+                                     threadDelay n' >> loop
                                    Right _ -> do -- we have access to the WWW, it seems. proceeding with mission!
                                      contents <- B.readFile file
-                                     when (B.length contents == 0) $ threadDelay 90000000
+                                     when (B.length contents == 0) $ threadDelay n'
                                      (url,rest) <- splitRandom contents
                                      let url' = B.unpack url
                                      let email' =  fromMaybe "nobody@mailinator.com" email
@@ -40,24 +43,23 @@ archivePage file email sh n = do connectedp <- CE.catch (simpleHTTP (getRequest 
                                                                         Nothing -> return Nothing
                                                                         Just sh' -> return $ Just (runCommand (sh' ++ " " ++ url'))
                                                             -- banned >=100 requests/hour; choke it
-                                                            -- default: 48 seconds
-                                                            threadDelay $ 1000000 * fromMaybe 48 n
+                                                            threadDelay n'
                                                             case hdl of
                                                               Nothing -> return ()
-                                                              Just hdl' -> void $ liftM terminateProcess hdl'
-                                     unless (null rest) (writePages file url >> archivePage file email sh n) -- rid of leading \n
+                                                              Just hdl' -> void $ liftM terminateProcess hdl' -- GC
+                                     unless (null rest) (writePages file url >> loop) -- rid of leading \n
 
 -- re-reads a possibly modified 'file' from disk, removes the archived URL from it, and writes it back out for 'archivePage' to read immediately
 writePages :: FilePath -> B.ByteString -> IO ()
-writePages file done = do original <- liftM (B.split '\n') $ B.readFile file
-                          let new =  S.toList $ S.fromList original
-                          let final = B.intercalate (B.singleton '\n') $ filter (not . (== done)) new
+writePages file done = do original <- liftM B.lines $ B.readFile file
+                          let sorted =  S.toList $ S.fromList original
+                          let final = B.unlines $ filter (not . (== done)) sorted
                           B.writeFile file final
 
 -- pick a random entry in the list
 splitRandom :: B.ByteString -> IO (B.ByteString, [B.ByteString])
-splitRandom s = do let ss = B.split '\n' s
-                   let l  = B.count '\n' s
+splitRandom s = do let ss = B.lines s
+                   let l  = length ss
                    i <- getStdRandom (randomR (0,l))
                    let randpick = if length ss > 1 then ss !! i else head ss
                    let removed = Data.List.delete randpick ss
