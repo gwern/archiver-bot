@@ -31,11 +31,14 @@ webciteArchive :: String -> String -> IO ()
 webciteArchive email url = unless ("http://www.webcitation.org" `isPrefixOf` url) $
                             pingURL ("http://www.webcitation.org/archive?url="++url++ "&email="++email)
 
--- | Request a URL through Internet Archive's live Internet mirror; this is completely speculative and may result in no archiving.
---   This method is a guess based on my use of their mirror and a banner that is sometimes inserted;
---   see <http://www.archive.org/post/380853/virus-operating-in-internet-archive>
+-- | Request a URL through Internet Archive's on-demand archiving URL.
+--
+-- This also does a backup archive attempt through the live Internet mirror;
+-- this is completely speculative and may result in no archiving.
+-- This method is a guess based on my use of their mirror and a banner that is sometimes inserted;
+-- see <http://www.archive.org/post/380853/virus-operating-in-internet-archive>
 internetArchiveLive :: String -> IO ()
-internetArchiveLive url = pingURL ("http://liveweb.archive.org/"++url)
+internetArchiveLive url = pingURL("http://web.archive.org/save/"++url) >> pingURL ("http://liveweb.archive.org/"++url)
 
 -- | Ping Alexa's servers like the Toolbar does; this may or may not result in any archiving.
 alexaToolbar :: String -> IO ()
