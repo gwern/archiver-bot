@@ -1,14 +1,14 @@
 name:                archiver
-version:             0.6.2
+version:             0.6.2.1
 
 license:             BSD3
 license-file:        LICENSE
 author:              Gwern
-maintainer:          Gwern <gwern0@gmail.com>
+maintainer:          Gwern <gwern@gwern.net>
 
 category:            Documentation, Network
 synopsis:            Archive supplied URLs in WebCite & Internet Archive
-description:         archiver is a daemon which will process a specified text file,
+description:         `archiver` is a daemon which will process a specified text file,
                      each line of which is a URL, and will (randomly) one by one request that
                      the URLs be archived or spidered by <http://www.webcitation.org>,
                      <http://www.archive.org>, and <http://www.wikiwix.com> for future reference.
@@ -28,8 +28,8 @@ stability:           provisional
 tested-with:         GHC==6.12.1
 
 source-repository head
-  type:     darcs
-  location: http://community.haskell.org/~gwern/archiver/
+  type:     git
+  location: git://github.com/gwern/archiver-bot.git
 
 Library
         exposed-modules:     Network.URL.Archiver
