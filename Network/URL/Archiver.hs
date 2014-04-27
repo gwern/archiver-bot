@@ -2,7 +2,7 @@ module Network.URL.Archiver (checkArchive) where
 
 import Control.Monad (when, unless, void)
 import Data.Char (isAlphaNum, isAscii)
-import Data.List (isPrefixOf)
+import Data.List (isInfixOf, isPrefixOf)
 import Data.Maybe (fromJust)
 import Network.Browser (browse, formToRequest, request, Form(..))
 import Network.HTTP (getRequest, simpleHTTP, RequestMethod(POST))
@@ -14,11 +14,11 @@ import Text.Printf (printf)
 pingURL :: String -> IO ()
 pingURL = void . simpleHTTP . getRequest
 
--- | Error check the URL and then archive it using 'webciteArchive', 'wikiwixArchive', 'internetArchiveLive', and 'alexaToolbar'
+-- | Error check the URL and then archive it using 'webciteArchive', 'wikiwixArchive', 'internetArchiveLive', and 'alexaToolbar'; excludes Tor links.
 checkArchive :: String -- ^ email for WebCite to send status to
                 -> String -- ^ URL to archive
                 -> IO ()
-checkArchive email url = when (isURI url) (alexaToolbar url >> webciteArchive email url >> internetArchiveLive url >> wikiwixArchive url >> googleSearch url >> archiveisArchive url)
+checkArchive email url = when (isURI url && not (".onion/" `isInfixOf` url)) (alexaToolbar url >> webciteArchive email url >> internetArchiveLive url >> wikiwixArchive url >> googleSearch url >> archiveisArchive url)
 
 {- | Request <http://www.webcitation.org> to copy a supplied URL; WebCite does on-demand archiving, unlike Alexa/Internet Archive,
    and so in practice this is the most useful function. This function throws away any return status from WebCite (which may be changed
@@ -53,7 +53,7 @@ wikiwixArchive url = pingURL ("http://archive.wikiwix.com/cache/?url="++url)
 
 -- | <http://blog.archive.is/post/45031162768/can-you-recommend-the-best-method-script-so-i-may-batch>
 archiveisArchive :: String -> IO ()
-archiveisArchive url = do let archiveform = Form POST (fromJust $ parseURI "http://archive.is/submit/") [("url", url), ("submit", "")]
+archiveisArchive url = do let archiveform = Form POST (fromJust $ parseURI "http://archive.today/submit/") [("url", url), ("submit", "")]
                           void $ browse $ request $ formToRequest archiveform
 
 -- can't hurt to let Google know it exists
