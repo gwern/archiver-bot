@@ -38,4 +38,4 @@ Library
 
 Executable archiver
            main-is:       archiver.hs
-           build-depends: base>=4 && < 5, containers, bytestring, random, process
+           build-depends: base>=4 && < 5, containers, bytestring, random, process, network-uri
