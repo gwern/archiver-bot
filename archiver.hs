@@ -41,7 +41,7 @@ archivePage file email sh n = do -- default: 48 seconds (converted to millisecon
                                                             print url'
                                                             hdl <- case sh of
                                                                         Nothing -> return Nothing
-                                                                        Just sh' -> return $ Just (runCommand (sh' ++ " " ++ url'))
+                                                                        Just sh' -> return $ Just (runCommand (sh' ++ " '" ++ url' ++ "'"))
                                                             -- banned >=100 requests/hour; choke it
                                                             threadDelay n'
                                                             case hdl of
