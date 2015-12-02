@@ -53,7 +53,7 @@ wikiwixArchive url = pingURL ("http://archive.wikiwix.com/cache/?url="++url)
 
 -- | <http://blog.archive.is/post/45031162768/can-you-recommend-the-best-method-script-so-i-may-batch>
 archiveisArchive :: String -> IO ()
-archiveisArchive url = do let archiveform = Form POST (fromJust $ parseURI "http://archive.today/submit/") [("url", url), ("submit", "")]
+archiveisArchive url = do let archiveform = Form POST (fromJust $ parseURI "http://archive.is/submit/") [("url", url), ("submit", "")]
                           void $ browse $ request $ formToRequest archiveform
 
 -- can't hurt to let Google know it exists
