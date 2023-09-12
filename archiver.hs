@@ -17,16 +17,15 @@ import Network.URL.Archiver (checkArchive)
 main :: IO ()
 main = do args <- getArgs
           case args of
-           (f:[])       -> archivePage f Nothing  Nothing  Nothing
-           (f:e:[])     -> archivePage f (Just e) Nothing  Nothing
-           (f:e:s:[])   -> archivePage f (Just e) (Just s) Nothing
-           (f:e:s:n:[]) -> archivePage f (Just e) (Just s) (Just (read n :: Int))
-           _ -> error "must supply a filename, or a filename and an email address"
+           (f:[])       -> archivePage f Nothing  Nothing
+           (f:e:[])     -> archivePage f (Just e) Nothing
+           (f:e:n:[]) -> archivePage f (Just e) (Just (read n :: Int))
+           _ -> error "must supply a filename"
 
-archivePage :: FilePath -> Maybe String -> Maybe String -> Maybe Int -> IO ()
-archivePage file email sh n = do -- default: 48 seconds (converted to milliseconds)
+archivePage :: FilePath -> Maybe String -> Maybe Int -> IO ()
+archivePage file sh n = do -- default: 48 seconds (converted to milliseconds)
                                  let n' = 1000000 * fromMaybe 48 n
-                                 let loop = archivePage file email sh n
+                                 let loop = archivePage file sh n
                                  connectedp <- CE.catch (simpleHTTP (getRequest "http://www.webcitation.org")) (\(_::CE.IOException) -> return (Left undefined))
                                  case connectedp of
                                    Left _  -> -- Left = ConnError, network not working! sleep for a minute and try again later
@@ -36,8 +35,7 @@ archivePage file email sh n = do -- default: 48 seconds (converted to millisecon
                                      when (B.length contents == 0) $ threadDelay n'
                                      (url,rest) <- splitRandom contents
                                      let url' = B.unpack url
-                                     let email' =  fromMaybe "nobody@mailinator.com" email
-                                     when (isURI url') $ do checkArchive email' url'
+                                     when (isURI url') $ do
                                                             print url'
                                                             hdl <- case sh of
                                                                         Nothing -> return Nothing

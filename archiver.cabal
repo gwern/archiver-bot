@@ -1,5 +1,5 @@
 name:                archiver
-version:             0.6.2.2
+version:             0.7
 
 license:             BSD3
 license-file:        LICENSE
@@ -7,20 +7,20 @@ author:              Gwern
 maintainer:          Gwern <gwern@gwern.net>
 
 category:            Documentation, Network
-synopsis:            Archive supplied URLs in WebCite & Internet Archive
+synopsis:            Archive supplied URLs in Internet Archive
 description:         `archiver` is a daemon which will process a specified text file,
                      each line of which is a URL, and will (randomly) one by one request that
-                     the URLs be archived or spidered by <http://www.webcitation.org>,
+                     the URLs be archived or spidered by
                      <http://www.archive.org>, and <http://www.wikiwix.com> for future reference.
                      (One may optionally specify an arbitrary `sh` command like `wget` to download URLs locally.)
                      .
                      Because the interface is a simple text file, this can be combined
-                     with other scripts; for example, a script using Sqlite to extract
+                     with other scripts; for example, a script using SQLite3 to extract
                      visited URLs from Firefox, or a program extracting URLs from Pandoc
-                     documents. (See <http://www.gwern.net/Archiving%20URLs>.)
+                     documents. (See <http://gwern.net/archiving>.)
                      .
                      For explanation of the derivation of the code in `Network.URL.Archiver`,
-                     see <http://www.gwern.net/haskell/Wikipedia%20Archive%20Bot>.
+                     see <http://gwern.net/haskell/wikipedia-archive-bot>.
 
 build-type:          Simple
 Cabal-Version:       >= 1.6
@@ -33,9 +33,10 @@ source-repository head
 
 Library
         exposed-modules:     Network.URL.Archiver
-        build-Depends:       base>=4 && < 5, network, HTTP, curl
+        build-Depends:       base>=4 && < 5, network, HTTP, curl, http-conduit
         ghc-options:         -Wall
 
 Executable archiver
            main-is:       archiver.hs
-           build-depends: base>=4 && < 5, containers, bytestring, random, process, network
+           other-modules: Network.URL.Archiver
+           build-depends: base>=4 && < 5, containers, bytestring, random, process, network, network-uri
